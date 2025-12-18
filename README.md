@@ -1,8 +1,8 @@
-fMRI Preprocessing Pipeline (FSL + AFNI + ANTs)
+**fMRI Preprocessing Pipeline (FSL + AFNI + ANTs)**
 
-A bash-based fMRI preprocessing pipeline that combines FSL, AFNI, and ANTs (plus SynthStrip for functional brain extraction) to produce an fMRI time series in MNI152 space.
+***A bash-based fMRI preprocessing pipeline that combines FSL, AFNI, and ANTs (plus SynthStrip for functional brain extraction) to produce an fMRI time series in MNI152 space.***
 
-What this pipeline does
+## 🧠❓ What does this pipeline do:?
 
 For each subject/session, the script performs:
 
@@ -14,7 +14,7 @@ Motion outlier/confounds extraction (FSL fsl_motion_outliers)
 
 Susceptibility distortion correction (FSL topup + applytopup) using AP/PA b0s
 
-T1 preprocessing
+**🧠 Structural (T1) Preprocessing:**
 
 N4 bias correction (ANTs N4BiasFieldCorrection)
 
@@ -22,22 +22,27 @@ Brain extraction (ANTs antsBrainExtraction.sh using MNI templates)
 
 T1 → MNI registration (ANTs antsRegistration) and saving T1_in_MNIants.nii.gz
 
+**🧠 Native (fMRI) standardization (Registration to the standard MNI template):**
+
 Functional → Anatomical registration
 
-Functional mean brain extraction (SynthStrip)
+Functional mean brain extraction (skull stripping, SynthStrip)
 
-EPI(mean) → T1 brain registration (ANTs antsRegistrationSyNQuick.sh)
+Functional(mean) → T1 brain registration (ANTs antsRegistrationSyNQuick.sh)
 
-Transform functional to MNI
+Transform functional to MNI (QC here for alignment between functional and MNI template)
 
-Apply transforms to mean fMRI
+Apply derived transforms to full 4D time series by splitting to 3D volumes, transforming each, then merging back (FSL fslsplit/fslmerge + antsApplyTransforms)
 
-Apply transforms to full 4D time series by splitting to 3D volumes, transforming each, then merging back (FSL fslsplit/fslmerge + antsApplyTransforms)
+**🧠 fMRI preprocessing in MNI space:**
 
-(Planned/placeholder) spatial smoothing + temporal filtering
+spatial smoothing (FSLmaths, set the FWHM as desired)
 
-Requirements
-Software
+temporal filtering (FSLmaths, set cutoff as desired, please refer to X for some guidance on this)
+
+## 📦 Requirements
+
+**Software**
 
 FSL (slicetimer, fslmerge, fslmaths, fslinfo, fslsplit, fsl_motion_outliers)
 
@@ -49,101 +54,78 @@ SynthStrip (used for functional brain extraction; script uses a singularity wrap
 
 OS
 
-Tested on: Linux (recommended). macOS may work but is less common for FSL/AFNI/ANTs pipelines.
+*Processing tools were selected based on performance and output quality. Commented alternatives are provided for several steps, enabling flexibility in software requirements.*
 
-Tested versions (fill these in)
+**Tested on:** Linux (recommended). macOS may work but is less common for FSL/AFNI/ANTs pipelines.
 
-Please record what you tested with:
+*Tested versions:*
 
-FSL: _____
+FSL: 6.0.3
 
-AFNI: _____
+AFNI: AFNI_22.1.06
 
-ANTs: _____
+ANTs: 2.6.2
 
-SynthStrip: _____
+SynthStrip: 1.8 (singularity)
 
-Inputs expected
+## 📥 Inputs expected
 
 The script assumes you have the following (paths are configured at the top of the script):
 
-Functional
+***Functional:***
 
-raw_file.nii.gz
-Raw 4D fMRI time series.
+*raw_file.nii.gz* --> This is the raw 4D fMRI time series.
 
-slice_timings.txt
-Custom slice timing file for slicetimer --tcustom.
+*slice_timings.txt* --> Custom slice timing file for slicetimer --tcustom, suitable for multiband and other irregular acquisition schemes.
+See the script comments and step-by-step documentation for interleaved acquisitions.
 
-Optional but recommended for distortion correction:
+*Optional but necessary for distortion correction:*
 
-b0_ap.nii.gz
+b0_ap.nii.gz -->  Single-band reference image with anterior-to-posterior phase encoding (used for fieldmap estimation / distortion correction).
 
-b0_pa.nii.gz
+b0_pa.nii.gz --> Single-band reference image with posterior-to-anterior phase encoding (used for fieldmap estimation / distortion correction).
 
-acq_parameters.txt
-Topup acquisition parameters file used with topup/applytopup (--datain).
+*acq_parameters.txt* --> the text file describing phase-encoding directions and readout times for distortion correction.
 
-Anatomical
+***Anatomical:***
 
 T1.nii.gz
 Subject T1 (3D)
 
-Templates
+***Templates (FSL’s standard MNI files):***
 
-Uses FSL’s standard MNI files:
+$FSLDIR/data/standard/MNI152_T1_2mm.nii.gz --> Standard MNI152 T1 template (2 mm isotropic).
 
-$FSLDIR/data/standard/MNI152_T1_2mm.nii.gz
+$FSLDIR/data/standard/MNI152_T1_2mm_brain.nii.gz --> Brain-extracted version of the MNI152 T1 template.
 
-$FSLDIR/data/standard/MNI152_T1_2mm_brain.nii.gz
+$FSLDIR/data/standard/MNI152_T1_2mm_brain_mask.nii.gz --> Binary brain mask for the MNI152 template.
 
-$FSLDIR/data/standard/MNI152_T1_2mm_brain_mask.nii.gz
-
-Outputs produced
+## 📤 Outputs Produced
 
 Outputs are written inside your configured directories (typically under your func/, anatomical/, and conv_dir/).
 
-Functional intermediates
+***Functional intermediates:***
 
-inter_tc.nii.gz — slice-timing corrected
-
-inter_tc_mid.nii.gz — middle-volume reference for motion correction
-
-inter_mc.nii.gz — motion corrected
-
-inter_mc.1D + mc1.1D ... mc6.1D — motion parameters
-
-motion_confounds.txt — motion outliers/confounds (from fsl_motion_outliers)
-
-b0_all.nii.gz — merged b0s (AP/PA)
-
-my_topup_results* + b0_corr — topup outputs
-
-inter_sc.nii.gz — susceptibility corrected fMRI series
-
-inter_sc_avg.nii.gz — mean functional image
-
-Anatomical outputs (ANTs)
-
-T1_n4.nii.gz — N4 corrected T1
-
-T1_BrainExtractionBrain.nii.gz — extracted T1 brain
-
-T1_BrainExtractionMask.nii.gz — T1 brain mask
-
-_T1_to_MNIants_* — registration transforms
-
-T1_in_MNIants.nii.gz — T1 warped into MNI space
-
-Registration / MNI space fMRI
-
-inter_sc_avg_brain.nii.gz + inter_sc_avg_brain_mask.nii.gz — SynthStrip outputs
-
-fmri2T1ants_0GenericAffine.mat — EPI(mean)→T1 affine
-
-fmri_avg_in_MNIants.nii.gz — mean fMRI in MNI
-
-fmri_ts_MNIants.nii.gz — full 4D fMRI in MNI space
+| File | Description |
+|------|-------------|
+| *inter_tc.nii.gz* | Slice-timing corrected fMRI |
+| *inter_tc_mid.nii.gz* | Middle-volume reference for motion correction |
+| *inter_mc.nii.gz* | Motion corrected fMRI |
+| *inter_mc.1D, mc1.1D ... mc6.1D* | Motion parameters |
+| *motion_confounds.txt* | Motion outliers / confounds (from `fsl_motion_outliers`) |
+| *b0_all.nii.gz* | Merged b0 images (AP/PA) |
+| *my_topup_results* + *b0_corr* | Topup outputs |
+| *inter_sc.nii.gz* | Susceptibility-corrected fMRI series |
+| *inter_sc_avg.nii.gz* | Mean functional image after susceptibility correction |
+| *T1_n4.nii.gz* | N4 bias-corrected T1 anatomical image |
+| *T1_BrainExtractionBrain.nii.gz* | Extracted T1 brain |
+| *T1_BrainExtractionMask.nii.gz* | T1 brain mask |
+| *_T1_to_MNIants_* | ANTs registration transforms |
+| *T1_in_MNIants.nii.gz* | T1 warped into MNI space |
+| *inter_sc_avg_brain.nii.gz, inter_sc_avg_brain_mask.nii.gz* | SynthStrip outputs (brain & mask) |
+| *fmri2T1ants_0GenericAffine.mat* | EPI (mean) → T1 affine transform |
+| *fmri_avg_in_MNIants.nii.gz* | Mean fMRI in MNI space |
+| *fmri_ts_MNIants.nii.gz* | Full 4D fMRI in MNI space |
 
 Typical parameter choices you must set
 

@@ -20,7 +20,9 @@ N4 bias correction (ANTs N4BiasFieldCorrection)
 
 Brain extraction (ANTs antsBrainExtraction.sh using MNI templates)
 
-T1 → MNI registration (ANTs antsRegistration) and saving T1_in_MNIants.nii.gz
+T1 → MNI registration (ANTs antsRegistration) 
+
+Tissue segmentation (CSF / GM / WM) (FSL fast, 3-class segmentation on brain-extracted T1): *Generates partial-volume estimates (PVE)*
 
 **🧠 Native (fMRI) standardization (Registration to the standard MNI template):**
 
@@ -38,7 +40,7 @@ Apply derived transforms to full 4D time series by splitting to 3D volumes, tran
 
 spatial smoothing (FSLmaths, set the FWHM as desired)
 
-temporal filtering (FSLmaths, set cutoff as desired, please refer to X for some guidance on this)
+Nuisance signal extraction (WM / GM / CSF)
 
 ## 📦 Requirements
 
@@ -77,7 +79,6 @@ The script assumes you have the following (paths are configured at the top of th
 *raw_file.nii.gz* --> This is the raw 4D fMRI time series.
 
 *slice_timings.txt* --> Custom slice timing file for slicetimer --tcustom, suitable for multiband and other irregular acquisition schemes.
-See the script comments and step-by-step documentation for interleaved acquisitions.
 
 *Optional but necessary for distortion correction:*
 
@@ -123,9 +124,19 @@ Outputs are written inside your configured directories (typically under your fun
 | *_T1_to_MNIants_* | ANTs registration transforms |
 | *T1_in_MNIants.nii.gz* | T1 warped into MNI space |
 | *inter_sc_avg_brain.nii.gz, inter_sc_avg_brain_mask.nii.gz* | SynthStrip outputs (brain & mask) |
-| *fmri2T1ants_0GenericAffine.mat* | EPI (mean) → T1 affine transform |
+| *fmri2T1ants_0GenericAffine.mat* | EPI (mean) -> T1 affine transform |
 | *fmri_avg_in_MNIants.nii.gz* | Mean fMRI in MNI space |
 | *fmri_ts_MNIants.nii.gz* | Full 4D fMRI in MNI space |
+| *T1_CSF.nii.gz* | CSF partial-volume map (FAST) |
+| *T1_GM.nii.gz* | GM partial-volume map (FAST) |
+| *T1_WM.nii.gz* | WM partial-volume map (FAST) |
+| *T1_CSF_MNI.nii.gz* | CSF mask in MNI space (thresholded, binarized) |
+| *T1_GM_MNI.nii.gz* | GM mask in MNI space (thresholded, binarized) |
+| *T1_WM_MNI.nii.gz* | WM mask in MNI space (thresholded, binarized) |
+| *fmri_ts_smooth.nii.gz* | Spatially smoothed fMRI time series |
+| *fmri_ts_WM.txt* | Mean WM time series |
+| *fmri_ts_CSF.txt* | Mean CSF time series |
+| *fmri_ts_GM.txt* | Mean GM time series |
 
 Typical parameter choices you must set
 

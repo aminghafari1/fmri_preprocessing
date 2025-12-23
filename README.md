@@ -1,6 +1,6 @@
 **fMRI Preprocessing Pipeline (FSL + AFNI + ANTs)**
 
-***A bash-based fMRI preprocessing pipeline that combines FSL, AFNI, and ANTs (plus SynthStrip for functional brain extraction) to produce an fMRI time series in MNI152 space.***
+***A bash-based fMRI preprocessing pipeline that combines FSL, AFNI, and ANTs (plus SynthStrip) to produce an fMRI time series in MNI152 space.***
 
 ## 🧠❓ What does this pipeline do:?
 
@@ -55,8 +55,6 @@ ANTs (N4BiasFieldCorrection, antsBrainExtraction.sh, antsRegistration, antsApply
 SynthStrip (used for functional brain extraction; script uses a singularity wrapper/binary)
 
 OS
-
-*Processing tools were selected based on performance and output quality. Commented alternatives are provided for several steps, enabling flexibility in software requirements.*
 
 **Tested on:** Linux (recommended). macOS may work but is less common for FSL/AFNI/ANTs pipelines.
 
@@ -142,32 +140,28 @@ Typical parameter choices you must set
 
 These are user-defined in the script and should be documented for each dataset:
 
-TR (seconds) for slice-timing: slicetimer -r <TR>
+Repition time (TR in seconds) for slice-timing: slicetimer -r <TR>
 
 Slice timing file: --tcustom=/path/to/slice/timings.txt
 
 Topup acquisition parameters: --datain=acq_parameters.txt
 
-Topup config: --config=b02b0.cnf
+Topup config: --config=b02b0.cnf (FSL default; typically does not need to be changed)
 
 applytopup method: --method=jac
 
-(Later) smoothing FWHM and high-pass cutoff (if you add those steps)
+(Later) smoothing FWHM 
 
 How to run
-1) Set paths in the script (or in a config.sh)
+1) Set paths in the config.sh file
 
 You need to define at least:
-
-func=/path/to/functional_directory
-
-anatomical=/path/to/anatomical_directory
-
-conv_dir=/path/to/conversion_directory
-
-acq_parameters=/path/to/acquisition_parameters.txt
+- a directory to save the results for the subject.
+- a raw fmri address file
+- a structural (T1 scan) file.
 
 2) Make executable
-chmod +x preprocess.sh
-3) Run
-./preprocess.sh
+chmod +x prefmri.sh
+
+4) Run
+./prefmri.sh
